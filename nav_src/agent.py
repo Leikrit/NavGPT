@@ -13,7 +13,8 @@ from agent_base import BaseAgent
 from langchain import HuggingFacePipeline
 from langchain.agents.agent import AgentExecutor, AgentAction, AgentOutputParser
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.tools import Tool
+# from langchain.agents.tools import Tool
+from langchain_core.tools import Tool
 from langchain.chains import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
@@ -25,6 +26,8 @@ from langchain.schema import (
     OutputParserException
 )
 from langchain.base_language import BaseLanguageModel
+from langchain_community.llms.moonshot import Moonshot
+from langchain_ollama.llms import OllamaLLM
 
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from prompt.planner_prompt import (
@@ -173,6 +176,57 @@ class NavAgent(BaseAgent):
                 max_seq_len = 8000,
                 max_gen_len = 500,
                 max_batch_size = 1,
+            )
+        elif config.llm_model_name == 'llama-2-7b':
+            from LLMs.Langchain_llama import Custom_Llama
+            ckpt_dir = "LLMs/llama/Llama-2-7b"
+            tokenizer_path = "LLMs/llama/Llama-2-7b/tokenizer.model"
+            self.llm = Custom_Llama.from_model_id(
+                temperature=config.temperature,
+                ckpt_dir = ckpt_dir,
+                tokenizer_path = tokenizer_path,
+                max_seq_len = 8000,
+                max_gen_len = 500,
+                max_batch_size = 1,
+            )
+        elif config.llm_model_name == 'deepseek':
+            import os
+            from langchain_deepseek import ChatDeepSeek
+            os.environ["DEEPSEEK_API_KEY"] = "sk-e76c9b30279f41f3a65f6082ce11bcc7"
+            self.llm = ChatDeepSeek(
+                model="deepseek-chat",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-deepseek-1b':
+            self.llm = OllamaLLM(
+                model="deepseek-r1:1.5b",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-deepseek-7b':
+            self.llm = OllamaLLM(
+                model="deepseek-r1:7b",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-deepseek-14b':
+            self.llm = OllamaLLM(
+                model="deepseek-r1:14b",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'kimi':
+            import os
+            os.environ["MOONSHOT_API_KEY"] = "sk-u6kncl3OVRTxIjbbFKV0bFlGaXbBECVHmG6cle4Tv0JBmp2v"
+            self.llm = Moonshot(
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-qwen2-7b':
+            self.llm = OllamaLLM(
+                model="qwen2:7b",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-qwen-14b':
+            self.llm = OllamaLLM(
+                model="qwen:14b",
+                temperature=config.temperature
             )
         # elif config.llm_model_name == 'Vicuna-v1.5-13b':
         #     from LLMs.Langchain_Vicuna import Custom_Vicuna

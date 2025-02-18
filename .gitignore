@@ -10,4 +10,6 @@ __pycache__/
 *.swp
 
 datasets/*
+nav_src/LLMs/
+
 !datasets/.gitkeep
