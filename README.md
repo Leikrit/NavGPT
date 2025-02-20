@@ -3,7 +3,7 @@
 <h1>🎇NavGPT: Explicit Reasoning in Vision-and-Language Navigation with Large Language Models</h1>
 
 <div>
-    Originally from <a href='https://github.com/GengzeZhou' target='_blank'>Gengze Zhou</a> et al. <\ br>
+    Originally from <a href='https://github.com/GengzeZhou' target='_blank'>Gengze Zhou</a> et al. </br>
     Modified by
     <a href='https://github.com/Leikrit' target='_blank'>Jinyi Li</a><sup>🌟</sup>;
 </div>
