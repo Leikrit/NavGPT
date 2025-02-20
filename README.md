@@ -49,6 +49,9 @@ ollama -v
 
 Just simply follow the guidance on [Ollama](https://ollama.com/download/linux).
 
+---
+---
+
 ### Start Ollama server
 
 **Ollama server should be running when using *any* ollama commands.**
