@@ -9,6 +9,8 @@
 </div>
 <sup>🌟</sup>School of Computer Science and Engineering, South China University of Technology
 
+<div align="left">
+
 # 🤖 How to run
 
 ## 🔧 Conda Environments
