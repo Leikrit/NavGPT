@@ -10,7 +10,11 @@ pip install -r requirements.txt
 
 ## 📦 Data Preparation
 
-Follow the instructions in [NavGPT's repository](https://github.com/gengzezhou/navgpt#-data-preparation)
+Follow the instructions in [NavGPT's repository](https://github.com/gengzezhou/navgpt#-data-preparation).
+
+Download R2R data from [Dropbox](https://www.dropbox.com/sh/i8ng3iq5kpa68nu/AAB53bvCFY_ihYx1mkLlOB-ea?dl=1). Put the data in `datasets` directory.
+
+Related data preprocessing code can be found in `nav_src/scripts`.
 
 ## 🦙 Install ollama
 
