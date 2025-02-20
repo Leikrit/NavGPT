@@ -18,6 +18,8 @@ Related data preprocessing code can be found in `nav_src/scripts`.
 
 ## 🦙 Install ollama
 
+### 🇨🇳 For Chinese users
+
 Install `modelscope`.
 ```bash
 pip install modelscope
@@ -26,11 +28,6 @@ pip install modelscope
 Download `ollama`.
 ```bash
 modelscope download --model=modelscope/ollama-linux --local_dir ./ollama-linux --revision v0.5.7
-```
-
-Check the installation.
-```bash
-ollama -v
 ```
 
 ```bash
@@ -42,6 +39,15 @@ Then run
 ```bash
 ./ollama-modelscope-install.sh
 ```
+
+Check the installation.
+```bash
+ollama -v
+```
+
+### 🌐 For other regions
+
+Just simply follow the guidance on [Ollama](https://ollama.com/download/linux).
 
 ### Start Ollama server
 
@@ -80,11 +86,11 @@ Firstly, the visualization module is based on **experiment logs**, which means y
 ## ⬆️ Extract trajectories
 
 Run `visualization.py` to extract the trajectories from the experiment logs, and transfer them into coordinates for habitat simulator.
-> Currently, `visualization.py` is not yet implemented, please wait for updates coming soon.
+> Remember to change the file path in `visualization.py`.
 
 After extracting trajectories, all trajectories together with the scene ID will be saved into a JSON file. You can rename it in `visualization.py`.
 
 ## 📍🗺️ Visualize trajectories
 
 Run `draw_on_map.py` to visualize the experiment logs one at a time. Then, you will get a map with trajectory drawn, an image of the agent's view and an image of panorama view.
-
+> Remember to change the file path in `draw_on_map.py`.
