@@ -5,7 +5,7 @@
 <div>
     Originally from <a href='https://github.com/GengzeZhou' target='_blank'>Gengze Zhou</a> et al. </br>
     Modified by
-    <a href='https://github.com/Leikrit' target='_blank'>Jinyi Li</a><sup>🌟</sup>;
+    <a href='https://github.com/Leikrit' target='_blank'>Jinyi Li</a><sup>🌟</sup>
 </div>
 <sup>🌟</sup>School of Computer Science and Engineering, South China University of Technology
 
