@@ -9,7 +9,7 @@
 </div>
 <sup>🌟</sup>School of Computer Science and Engineering, South China University of Technology
 
-<div align="left">
+</div>
 
 # 🤖 How to run
 
