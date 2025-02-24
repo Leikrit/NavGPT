@@ -110,3 +110,20 @@ After extracting trajectories, all trajectories together with the scene ID will 
 
 Run `draw_on_map.py` to visualize the experiment logs one at a time. Then, you will get a map with trajectory drawn, an image of the agent's view and an image of panorama view.
 > Remember to change the file path in `draw_on_map.py`.
+
+Now that with the newest version, the visualization results will be stored in the `imgs` folder in the same directory with `draw_on_map.py`. The `imgs` folder will look like:
+
+```bash
+|- [scene ID]_1
+    |- [scene ID]_1_0_0_generated_panorama.jpg
+    |- [scene ID]_1_0_0_original.jpg
+    |- [scene ID]_1_0_panorama.jpg
+    |- ...
+    |- [scene ID]_1_n_n_generated_panorama.jpg
+    |- [scene ID]_1_n_n_original.jpg
+    |- [scene ID]_1_n_panorama.jpg
+    |- {scene ID}_1_map.jpg
+|- ...
+```
+
+Where 'generated panorama' means the panorama processed by OpenCV, which will be more intuitive, 'original' means the original image that the agent sees, 'panorama' means the original panorama, which is basically a combination of 12 images covering 360 degrees.
