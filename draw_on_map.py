@@ -22,12 +22,14 @@ from habitat_sim.utils import viz_utils as vut
 
 import json
 import re
+from scipy.spatial.transform import Rotation as R
 
 # =====================Configurations==========================
 data_path = "/home/zhandijia/DockerData/zhandijia-root/ETPNav/data/scene_datasets/mp3d/"
 output_json_file = "output_1.json"  # 之前的输出文件
 coordinates_output_file = f"coordinates_by_scene_from_{output_json_file.replace('.json', '')}.json"  # 保存按scene分组的坐标文件
 output_path = "panorama.jpg"  # 全景图指定保存路径和文件名
+save_path = "imgs" # 保存可视化图片文件夹
 
 def extract_scene_name(scene_key):
     """
@@ -38,7 +40,7 @@ def extract_scene_name(scene_key):
         return match.group(1)  # 返回去掉标识符的scene名称
     return scene_key  # 如果没有标识符，直接返回原始名称
 
-def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([])):
+def display_sample(rgb_obs, save_img_path, index, semantic_obs=np.array([]), depth_obs=np.array([])):
     from habitat_sim.utils.common import d3_40_colors_rgb
 
     rgb_img = Image.fromarray(rgb_obs, mode="RGBA")
@@ -64,7 +66,8 @@ def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([])):
         ax.axis("off")
         ax.set_title(titles[i])
         plt.imshow(data)
-    plt.show(block=False)
+    # plt.show(block=False)
+    plt.savefig(f"{save_img_path}_{index}_original.jpg")
 
 # convert 3d points to 2d topdown coordinates
 def convert_points_to_topdown(pathfinder, points, meters_per_pixel):
@@ -78,7 +81,7 @@ def convert_points_to_topdown(pathfinder, points, meters_per_pixel):
     return points_topdown
 
 # display a topdown map with matplotlib
-def display_map(topdown_map, key_points=None):
+def display_map(topdown_map, save_map_path, key_points=None):
     plt.figure(figsize=(12, 8))
     ax = plt.subplot(1, 1, 1)
     ax.axis("off")
@@ -87,7 +90,8 @@ def display_map(topdown_map, key_points=None):
     if key_points is not None:
         for point in key_points:
             plt.plot(point[0], point[1], marker="o", markersize=10, alpha=0.8)
-    plt.show(block=False)
+    # plt.show(block=False)
+    plt.savefig(f"{save_map_path}_map.png")
 
 # This function generates a config for the simulator.
 # It contains two parts:
@@ -206,7 +210,18 @@ def save_coordinates_by_scene_to_file(coordinates_by_scene, output_file):
         json.dump(coordinates_by_scene, file, indent=4, default=lambda x: x.tolist())
     print(f"Coordinates by scene saved to {output_file}")
 
-def get_panorama(sim, agent_state, num_views=36, view_angle=360):
+def angle_to_quaternion(angle_degrees):
+    """
+    将角度转换为四元数
+    :param angle_degrees: 绕Y轴旋转的角度（单位：度）
+    :return: 四元数表示的旋转
+    """
+    angle_radians = np.deg2rad(angle_degrees)
+    rotation = R.from_euler('y', angle_radians)
+    quaternion = rotation.as_quat()  # 返回四元数 [x, y, z, w]
+    return np.quaternion(quaternion[3], quaternion[0], quaternion[1], quaternion[2])
+
+def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=360):
     """
     获取全景图
     :param sim: HabitatSim 模拟器实例
@@ -219,30 +234,77 @@ def get_panorama(sim, agent_state, num_views=36, view_angle=360):
     panorama_images = []
 
     # 计算每个视角的旋转角度
-    step_angle = math.radians(view_angle / num_views)
+    step_angle = view_angle / num_views
+    print(step_angle)
 
     for i in range(num_views):
         # 计算当前视角的旋转角度
         current_angle = i * step_angle
-
+        rotation_quaternion = angle_to_quaternion(current_angle)
         # 更新 Agent 的旋转状态
-        agent_state.rotation.y = current_angle
-        # sim.set_agent_state(agent_state)
+        # agent_state.rotation.y = current_angle
+        agent_state.rotation = rotation_quaternion
         agent.set_state(agent_state)
 
         # 获取当前视角的观测
         observations = sim.get_sensor_observations()
         rgb = observations["color_sensor"]
 
-        # 将图像从 Habitat 的格式转换为 OpenCV 的格式
-        rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        # 将图像从 Habitat 的格式转换为 NumPy 数组
+        rgb = np.array(rgb, dtype=np.uint8)
 
         # 添加到全景图列表
         panorama_images.append(rgb)
 
-    # 拼接全景图
-    panorama = np.hstack(panorama_images)
-    return panorama
+    # # 将 numpy 数组转换为 PIL 图像
+    # pil_images = [Image.fromarray(img) for img in panorama_images]
+    # # 获取图像的宽度和高度
+    # widths, heights = zip(*(i.size for i in pil_images))
+    # # 计算总宽度和最大高度
+    # total_width = sum(widths)
+    # max_height = max(heights)
+    #
+    # # 创建一个新的空白图像
+    # new_im = Image.new('RGB', (total_width, max_height))
+    #
+    # # 拼接图像
+    # x_offset = 0
+    # for img in pil_images:
+    #     new_im.paste(img, (x_offset, 0))
+    #     x_offset += img.size[0]
+    #
+    # # 保存全景图
+    # new_im.save('panorama.jpg')
+    # print("全景图拼接成功，保存为 panorama.jpg")
+    rgb_imgs = []
+    for x in panorama_images:
+        xi = Image.fromarray(x, mode="RGBA")
+        xii = xi.convert("RGB")
+        rgb_array = np.array(xii)
+        rgb_imgs.append(rgb_array)
+
+
+    # rgb_images = panorama_images[:, :, :3]
+    # bgr_images = cv2.cvtColor(rgb_images, cv2.COLOR_RGB2BGR)
+    # 创建拼接器
+    stitcher = cv2.Stitcher_create()
+
+    # 拼接图像
+    status, panorama_full = stitcher.stitch(rgb_imgs)
+
+    if status == cv2.Stitcher_OK:
+        # 保存全景图
+        cv2.imwrite(f'{save_path}_{index}_generated_panorama.jpg', panorama_full)
+        print(f"全景图拼接成功，保存为{save_path}_{index}_generated_panorama.jpg")
+    else:
+        print("拼接失败，错误代码：", status)
+
+    # 使用 matplotlib 拼接全景图
+    fig, ax = plt.subplots(figsize=(80, 5))  # 调整大小以适应全景图
+    ax.imshow(np.hstack(panorama_images))
+    ax.axis('off')  # 关闭坐标轴
+    plt.tight_layout()
+    return fig
 
 def make_cfg(settings):
     sim_cfg = habitat_sim.SimulatorConfiguration()
@@ -306,12 +368,22 @@ if __name__ == "__main__":
         print(f"Extracted coordinates for {len(coordinates_by_scene)} scenes.")
         # 保存按scene分组的坐标到文件
         save_coordinates_by_scene_to_file(coordinates_by_scene, coordinates_output_file)
-
         for scenekey, coordinates in coordinates_by_scene.items():
             scene = extract_scene_name(scenekey)
-            if scene == "QUCTc6BB5sX" or scene == "unknown":
+            if scene == "unknown":
                 continue
             print(f"================Processing scene {scene}...===================")
+            current_path = os.getcwd()
+            save_scene = os.path.join(current_path, save_path, scenekey)
+            if os.path.exists(save_scene):
+                pass
+            else:
+                try:
+                    os.makedirs(save_scene)
+                    print(f"已创建路径：{save_scene}")
+                except Exception as e:
+                    print(f"创建路径{save_scene}时出错：{e}")
+
             test_scene = os.path.join(
                 data_path, f"{scene}/{scene}.glb"
             )
@@ -352,6 +424,8 @@ if __name__ == "__main__":
             meters_per_pixel = 0.025
             scene_bb = sim.get_active_scene_graph().get_root_node().cumulative_bb
             height = scene_bb.y().min
+            base_map_path = os.path.join(save_scene, f"{scenekey}")
+
             display = True
             if display:
                 top_down_map = maps.get_topdown_map(
@@ -383,7 +457,7 @@ if __name__ == "__main__":
                     top_down_map, trajectory[0], initial_angle, agent_radius_px=8
                 )
                 print("\nDisplay the map with agent and path overlay:")
-                display_map(top_down_map)
+                display_map(top_down_map, base_map_path)
 
                 # @markdown 4. (optional) Place agent and render images at trajectory points (if found).
                 display_path_agent_renders = True  # @param{type:"boolean"}
@@ -393,6 +467,7 @@ if __name__ == "__main__":
                     agent_state = habitat_sim.AgentState()
                     temp_tangent = None
                     for ix, point in enumerate(path_points):
+                        base_path = os.path.join(save_scene, f"{scenekey}_{ix}")
                         if ix < len(path_points) - 1:
                             tangent = path_points[ix + 1] - point
                             agent_state.position = point
@@ -405,39 +480,32 @@ if __name__ == "__main__":
                             temp_tangent = tangent_orientation_q
                             agent_state.rotation = utils.quat_from_magnum(tangent_orientation_q)
                             agent.set_state(agent_state)
-
-                            # 获取全景图
-                            # panorama = get_panorama(sim, agent_state)
-                            display_panorama = False
-                            if display_panorama:
-                                # 显示全景图
-                                cv2.imshow("Panorama", panorama)
-
-                                # 保存全景图到文件
-                                scene_panorama = os.path.join(
-                                    f"{scene}_", output_path
-                                )
-                                cv2.imwrite(scene_panorama, panorama)
-                                print(f"Panorama saved to {scene_panorama}")
-                                cv2.waitKey(0)
-                                cv2.destroyAllWindows()
-
                             observations = sim.get_sensor_observations()
                             rgb = observations["color_sensor"]
-
                             if display:
-                                display_sample(rgb)
+                                display_sample(rgb, base_path, ix)
+                                display_panorama = True
+                                if display_panorama:
+                                    # 获取并显示全景图
+                                    panorama = get_panorama(sim, agent_state, base_path, ix)
+                                    scene_panorama = os.path.join(save_scene, f"{scenekey}_{ix}_" + output_path)
+                                    panorama.savefig(scene_panorama, bbox_inches='tight', pad_inches=0)
                         else:
                             agent_state.position = point
                             agent_state.rotation = utils.quat_from_magnum(temp_tangent)
                             agent.set_state(agent_state)
                             observations = sim.get_sensor_observations()
                             rgb = observations["color_sensor"]
-
                             if display:
-                                display_sample(rgb)
+                                display_sample(rgb, base_path, ix)
+                                display_panorama = True
+                                if display_panorama:
+                                    # 获取并显示全景图
+                                    panorama = get_panorama(sim, agent_state, base_path, ix)
+                                    scene_panorama = os.path.join(save_scene, f"{scenekey}_{ix}_" + output_path)
+                                    panorama.savefig(scene_panorama, bbox_inches='tight', pad_inches=0)
+
                 sim.close()
     else:
         print("No coordinates found in the output JSON file.")
-
 
