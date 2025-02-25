@@ -228,6 +228,16 @@ class NavAgent(BaseAgent):
                 model="qwen:14b",
                 temperature=config.temperature
             )
+        else:
+            print("config.llm_model_name: " + config.llm_model_name)
+            from LLMs.huggingface_model import Custom_Model
+            self.llm = Custom_Model.from_model_id(
+                model_name=config.llm_model_name,
+                temperature=config.temperature,
+                max_seq_len = 8000,
+                max_gen_len = 500,
+                max_batch_size = 1,
+            )
         # elif config.llm_model_name == 'Vicuna-v1.5-13b':
         #     from LLMs.Langchain_Vicuna import Custom_Vicuna
         #     self.llm = Custom_Vicuna.from_config(
