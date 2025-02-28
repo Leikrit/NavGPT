@@ -29,7 +29,7 @@ data_path = "/home/zhandijia/DockerData/zhandijia-root/ETPNav/data/scene_dataset
 output_json_file = "output_1.json"  # 之前的输出文件
 coordinates_output_file = f"coordinates_by_scene_from_{output_json_file.replace('.json', '')}.json"  # 保存按scene分组的坐标文件
 output_path = "panorama.jpg"  # 全景图指定保存路径和文件名
-save_path = "imgs" # 保存可视化图片文件夹
+save_path = "imgs2" # 保存可视化图片文件夹
 
 def extract_scene_name(scene_key):
     """
@@ -62,10 +62,15 @@ def display_sample(rgb_obs, save_img_path, index, semantic_obs=np.array([]), dep
 
     plt.figure(figsize=(12, 8))
     for i, data in enumerate(arr):
-        ax = plt.subplot(1, 3, i + 1)
+        ax = plt.subplot(1, 2, i + 1)
         ax.axis("off")
         ax.set_title(titles[i])
-        plt.imshow(data)
+        # 检查图像是否为灰度图像
+        print(i)
+        if i == 1:  # 灰度图像
+            plt.imshow(data, cmap='gray')  # 使用灰度颜色映射
+        else:
+            plt.imshow(data)  # 彩色图像
     # plt.show(block=False)
     plt.savefig(f"{save_img_path}_{index}_original.jpg")
 
@@ -221,7 +226,7 @@ def angle_to_quaternion(angle_degrees):
     quaternion = rotation.as_quat()  # 返回四元数 [x, y, z, w]
     return np.quaternion(quaternion[3], quaternion[0], quaternion[1], quaternion[2])
 
-def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=360):
+def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=360, depth=False):
     """
     获取全景图
     :param sim: HabitatSim 模拟器实例
@@ -232,6 +237,7 @@ def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=36
     """
     # 初始化全景图列表
     panorama_images = []
+    panorama_depth = []
 
     # 计算每个视角的旋转角度
     step_angle = view_angle / num_views
@@ -249,6 +255,10 @@ def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=36
         # 获取当前视角的观测
         observations = sim.get_sensor_observations()
         rgb = observations["color_sensor"]
+        if depth:
+            depth_obs = observations["depth_sensor"]
+            depth_obs = np.array(depth_obs, dtype=np.uint8)
+            panorama_depth.append(depth_obs)
 
         # 将图像从 Habitat 的格式转换为 NumPy 数组
         rgb = np.array(rgb, dtype=np.uint8)
@@ -282,7 +292,12 @@ def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=36
         xii = xi.convert("RGB")
         rgb_array = np.array(xii)
         rgb_imgs.append(rgb_array)
-
+    if depth:
+        depth_imgs = []
+        for x in panorama_depth:
+            xi = Image.fromarray(x, mode="L")
+            depth_array = np.array(xi)
+            depth_imgs.append(depth_array)
 
     # rgb_images = panorama_images[:, :, :3]
     # bgr_images = cv2.cvtColor(rgb_images, cv2.COLOR_RGB2BGR)
@@ -290,21 +305,47 @@ def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=36
     stitcher = cv2.Stitcher_create()
 
     # 拼接图像
-    status, panorama_full = stitcher.stitch(rgb_imgs)
+    try:
+        status, panorama_full = stitcher.stitch(rgb_imgs)
+        if status == cv2.Stitcher_OK:
+            # 保存全景图
+            cv2.imwrite(f'{save_path}_{index}_generated_panorama.jpg', panorama_full)
+            print(f"全景图拼接成功，保存为{save_path}_{index}_generated_panorama.jpg")
+        else:
+            print("拼接失败，错误代码：", status)
+    except Exception as e:
+        print("Failed to stitch RGB images:", e)
 
-    if status == cv2.Stitcher_OK:
-        # 保存全景图
-        cv2.imwrite(f'{save_path}_{index}_generated_panorama.jpg', panorama_full)
-        print(f"全景图拼接成功，保存为{save_path}_{index}_generated_panorama.jpg")
+    if depth:
+        try:
+            status, panorama_full = stitcher.stitch(depth_imgs)
+            if status == cv2.Stitcher_OK:
+                # 保存全景图
+                cv2.imwrite(f'{save_path}_{index}_generated_depth_panorama.jpg', panorama_full)
+                print(f"全景图拼接成功，保存为{save_path}_{index}_generated_depth_panorama.jpg")
+            else:
+                print("拼接失败，错误代码：", status)
+        except Exception as e:
+            print("Failed to stitch depth images:", e)
+
+    if not depth:
+        # 使用 matplotlib 拼接全景图
+        fig, ax = plt.subplots(figsize=(80, 5))  # 调整大小以适应全景图
+        ax.imshow(np.hstack(panorama_images))
+        ax.axis('off')  # 关闭坐标轴
+        plt.tight_layout()
+        return fig
     else:
-        print("拼接失败，错误代码：", status)
+        fig, ax = plt.subplots(figsize=(80, 10))
+        ax = plt.subplot(2, 1, 1)
+        ax.axis("off")
+        ax.imshow(np.hstack(panorama_images))
+        ax = plt.subplot(2, 1, 2)
+        ax.axis("off")
+        ax.imshow(np.hstack(panorama_depth), cmap="gray")
+        plt.tight_layout()
+        return fig
 
-    # 使用 matplotlib 拼接全景图
-    fig, ax = plt.subplots(figsize=(80, 5))  # 调整大小以适应全景图
-    ax.imshow(np.hstack(panorama_images))
-    ax.axis('off')  # 关闭坐标轴
-    plt.tight_layout()
-    return fig
 
 def make_cfg(settings):
     sim_cfg = habitat_sim.SimulatorConfiguration()
@@ -324,11 +365,11 @@ def make_cfg(settings):
             "resolution": [settings["height"], settings["width"]],
             "position": [0.0, settings["sensor_height"], 0.0],
         },
-        "semantic_sensor": {
-            "sensor_type": habitat_sim.SensorType.SEMANTIC,
-            "resolution": [settings["height"], settings["width"]],
-            "position": [0.0, settings["sensor_height"], 0.0],
-        },
+        # "semantic_sensor": {
+        #     "sensor_type": habitat_sim.SensorType.SEMANTIC,
+        #     "resolution": [settings["height"], settings["width"]],
+        #     "position": [0.0, settings["sensor_height"], 0.0],
+        # },
     }
 
     sensor_specs = []
@@ -388,7 +429,7 @@ if __name__ == "__main__":
                 data_path, f"{scene}/{scene}.glb"
             )
             rgb_sensor = True  # @param {type:"boolean"}
-            depth_sensor = False # @param {type:"boolean"}
+            depth_sensor = True # @param {type:"boolean"}
             semantic_sensor = False  # @param {type:"boolean"}
 
             sim_settings = {
@@ -396,8 +437,9 @@ if __name__ == "__main__":
                 "height": 256,
                 "scene": test_scene,  # Scene path
                 "default_agent": 0,
-                "sensor_height": 1.5,  # Height of sensors in meters
+                "sensor_height": coordinates[0][1],  # Height of sensors in meters
                 "color_sensor": rgb_sensor,  # RGB sensor
+                "depth_sensor": depth_sensor,  # Depth sensor
                 "seed": 1,  # used in the random navigation
                 "enable_physics": False,  # kinematics only
             }
@@ -405,7 +447,8 @@ if __name__ == "__main__":
 
             # cfg = make_simple_cfg(sim_settings)
             try:
-                cfg = make_simple_cfg(sim_settings)
+                # cfg = make_simple_cfg(sim_settings)
+                cfg = make_cfg(sim_settings)
             except ValueError as e:
                 print(f"Could not find scene {scene}: {e}")
                 continue
@@ -482,12 +525,13 @@ if __name__ == "__main__":
                             agent.set_state(agent_state)
                             observations = sim.get_sensor_observations()
                             rgb = observations["color_sensor"]
+                            depth = observations["depth_sensor"]
                             if display:
-                                display_sample(rgb, base_path, ix)
+                                display_sample(rgb, base_path, ix, depth_obs=depth)
                                 display_panorama = True
                                 if display_panorama:
                                     # 获取并显示全景图
-                                    panorama = get_panorama(sim, agent_state, base_path, ix)
+                                    panorama = get_panorama(sim, agent_state, base_path, ix, depth=True)
                                     scene_panorama = os.path.join(save_scene, f"{scenekey}_{ix}_" + output_path)
                                     panorama.savefig(scene_panorama, bbox_inches='tight', pad_inches=0)
                         else:
@@ -496,12 +540,13 @@ if __name__ == "__main__":
                             agent.set_state(agent_state)
                             observations = sim.get_sensor_observations()
                             rgb = observations["color_sensor"]
+                            depth = observations["depth_sensor"]
                             if display:
-                                display_sample(rgb, base_path, ix)
+                                display_sample(rgb, base_path, ix, depth_obs=depth)
                                 display_panorama = True
                                 if display_panorama:
                                     # 获取并显示全景图
-                                    panorama = get_panorama(sim, agent_state, base_path, ix)
+                                    panorama = get_panorama(sim, agent_state, base_path, ix, depth=True)
                                     scene_panorama = os.path.join(save_scene, f"{scenekey}_{ix}_" + output_path)
                                     panorama.savefig(scene_panorama, bbox_inches='tight', pad_inches=0)
 
