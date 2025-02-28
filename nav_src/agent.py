@@ -228,6 +228,16 @@ class NavAgent(BaseAgent):
                 model="qwen:14b",
                 temperature=config.temperature
             )
+        elif config.llm_model_name == 'ollama-qwen2.5-7b':
+            self.llm = OllamaLLM(
+                model="qwen2.5:7b-4k",
+                temperature=config.temperature
+            )
+        elif config.llm_model_name == 'ollama-qwen2.5-14b':
+            self.llm = OllamaLLM(
+                model="qwen2.5:14b",
+                temperature=config.temperature
+            )
         else:
             print("config.llm_model_name: " + config.llm_model_name)
             from LLMs.huggingface_model import Custom_Model
