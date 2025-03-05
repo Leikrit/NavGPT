@@ -29,7 +29,7 @@ data_path = "/home/zhandijia/DockerData/zhandijia-root/ETPNav/data/scene_dataset
 output_json_file = "output_1.json"  # 之前的输出文件
 coordinates_output_file = f"coordinates_by_scene_from_{output_json_file.replace('.json', '')}.json"  # 保存按scene分组的坐标文件
 output_path = "panorama.jpg"  # 全景图指定保存路径和文件名
-save_path = "imgs2" # 保存可视化图片文件夹
+save_path = "imgs3" # 保存可视化图片文件夹
 
 def extract_scene_name(scene_key):
     """
@@ -316,17 +316,17 @@ def get_panorama(sim, agent_state, save_path, index, num_views=12, view_angle=36
     except Exception as e:
         print("Failed to stitch RGB images:", e)
 
-    if depth:
-        try:
-            status, panorama_full = stitcher.stitch(depth_imgs)
-            if status == cv2.Stitcher_OK:
-                # 保存全景图
-                cv2.imwrite(f'{save_path}_{index}_generated_depth_panorama.jpg', panorama_full)
-                print(f"全景图拼接成功，保存为{save_path}_{index}_generated_depth_panorama.jpg")
-            else:
-                print("拼接失败，错误代码：", status)
-        except Exception as e:
-            print("Failed to stitch depth images:", e)
+    # if depth:
+    #     try:
+    #         status, panorama_full = stitcher.stitch(depth_imgs)
+    #         if status == cv2.Stitcher_OK:
+    #             # 保存全景图
+    #             cv2.imwrite(f'{save_path}_{index}_generated_depth_panorama.jpg', panorama_full)
+    #             print(f"全景图拼接成功，保存为{save_path}_{index}_generated_depth_panorama.jpg")
+    #         else:
+    #             print("拼接失败，错误代码：", status)
+    #     except Exception as e:
+    #         print("Failed to stitch depth images:", e)
 
     if not depth:
         # 使用 matplotlib 拼接全景图
@@ -437,7 +437,7 @@ if __name__ == "__main__":
                 "height": 256,
                 "scene": test_scene,  # Scene path
                 "default_agent": 0,
-                "sensor_height": coordinates[0][1],  # Height of sensors in meters
+                "sensor_height": coordinates[0][1] + 1.5,  # Height of sensors in meters
                 "color_sensor": rgb_sensor,  # RGB sensor
                 "depth_sensor": depth_sensor,  # Depth sensor
                 "seed": 1,  # used in the random navigation
@@ -465,14 +465,17 @@ if __name__ == "__main__":
 
             # @markdown 3. Display trajectory (if found) on a topdown map of ground floor
             meters_per_pixel = 0.025
-            scene_bb = sim.get_active_scene_graph().get_root_node().cumulative_bb
-            height = scene_bb.y().min
+            # scene_bb = sim.get_active_scene_graph().get_root_node().cumulative_bb
+            # height = scene_bb.y().min
+            # print(f"Height_bb: {height}")
+            # print(f"Height_coo: {coordinates[0][1]}")
+            height = coordinates[0][1]
             base_map_path = os.path.join(save_scene, f"{scenekey}")
 
             display = True
             if display:
                 top_down_map = maps.get_topdown_map(
-                    sim.pathfinder, height, meters_per_pixel=meters_per_pixel
+                    sim.pathfinder, height
                 )
                 recolor_map = np.array(
                     [[255, 255, 255], [128, 128, 128], [0, 0, 0]], dtype=np.uint8
@@ -512,6 +515,8 @@ if __name__ == "__main__":
                     for ix, point in enumerate(path_points):
                         base_path = os.path.join(save_scene, f"{scenekey}_{ix}")
                         if ix < len(path_points) - 1:
+                            if (point == path_points[ix+1]).all():
+                                continue
                             tangent = path_points[ix + 1] - point
                             agent_state.position = point
                             tangent_orientation_matrix = mn.Matrix4.look_at(
