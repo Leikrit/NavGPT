@@ -95,6 +95,32 @@ CUDA_VISIBLE_DEVICES=3 python -m torch.distributed.launch NavGPT.py --llm_model_
 
 Visualization can be done following the instructions below.
 
+## 🏠 Installing Habitat
+
+Installing Habitat v0.3.3 is strongly recommended. 
+
+Following the instructions in <a href="https://github.com/facebookresearch/habitat-sim"> Habitat official </a>. 
+
+Remember to **install Habitat lab** as well, or you might encounter `No module named habitat` error.
+
+> Why v0.3.3? Because with such version, the FOV of the cameras can be modified in order to perfectly fit the setting in NavGPT's original paper.
+
+### With lower version
+
+For example, if your Habitat version is v0.1.7, that you should change the `make_new_cfg()` function into `make_cfg()` in `draw_on_map.py`.
+
+Also, you should modify the `sim_settings` variable. Delete the key `"scene_dataset"` as it is no longer needed for lower version.
+
+## 📦 Data preparation
+
+Prepare the data following <a href="https://github.com/facebookresearch/habitat-sim/blob/main/DATASETS.md#matterport3d-mp3d-dataset"> Habitat official </a>. You only need to download `mp3d` dataset.
+
+If you don't have `scene_dataset_config.json` file in your dataset folders, you can also download it from the link above.
+
+> This file is for higher versions, ignore it if you are using lower version
+
+> By the way, I am sorry that I don't know which version is high or low. You can check whether your version has the class `CameraSensorSpec`. If do, then you are high, otherwise you are low.
+
 ## 📃 Running exprs
 
 Firstly, the visualization module is based on **experiment logs**, which means you need to run some experiments first. You can follow the guidance above to run the experiments.
