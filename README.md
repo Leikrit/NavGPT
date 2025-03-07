@@ -141,15 +141,13 @@ Now that with the newest version, the visualization results will be stored in th
 
 ```bash
 |- [scene ID]_1
-    |- [scene ID]_1_0_0_generated_panorama.jpg
-    |- [scene ID]_1_0_0_original.jpg
+    |- [scene ID]_1_0_original.jpg
     |- [scene ID]_1_0_panorama.jpg
     |- ...
-    |- [scene ID]_1_n_n_generated_panorama.jpg
-    |- [scene ID]_1_n_n_original.jpg
+    |- [scene ID]_1_n_original.jpg
     |- [scene ID]_1_n_panorama.jpg
     |- {scene ID}_1_map.jpg
 |- ...
 ```
 
-Where 'generated panorama' means the panorama processed by OpenCV, which will be more intuitive, 'original' means the original image that the agent sees, 'panorama' means the original panorama, which is basically a combination of 12 images covering 360 degrees.
+Where 'original' means the original image that the agent sees, 'panorama' means the original panorama, which is basically a combination of 8 images covering 360 degrees.
