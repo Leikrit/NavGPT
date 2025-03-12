@@ -153,9 +153,9 @@ def save_results_to_file(output_file, results):
 
 # 主程序
 if __name__ == "__main__":
-    input_json_file = "/home/lijinyi/NavGPT/datasets/R2R/exprs/ollama-qwen2-7b-test-2/preds/submit_R2R_val_unseen_instr.json"  # 输入的JSON文件路径
+    input_json_file = "/home/lijinyi/NavGPT/datasets/R2R/exprs/ollama-qwen25-7b-test-4k-50iters/preds/submit_R2R_val_unseen_instr.json"  # 输入的JSON文件路径
     nodes_folder = "/home/lijinyi/NavGPT/datasets/R2R/habitat_mp3d_connectivity_graphs"  # 包含节点JSON文件的文件夹路径
-    output_file = "output_1.json"  # 输出文件路径
+    output_file = "output_qwen25-50its.json"  # 输出文件路径
 
     # 提取所有trajectories
     trajectories = extract_trajectories_from_json(input_json_file)
